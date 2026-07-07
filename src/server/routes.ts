@@ -11,6 +11,7 @@ import { openaiToCli } from "../adapter/openai-to-cli.js";
 import {
   cliResultToOpenai,
   createDoneChunk,
+  dominantModelName,
 } from "../adapter/cli-to-openai.js";
 import type { OpenAIChatRequest, OpenAIToolCall } from "../types/openai.js";
 import type { ClaudeCliAssistant, ClaudeCliResult, ClaudeCliStreamEvent } from "../types/claude-cli.js";
@@ -244,7 +245,10 @@ async function handleStreamingResponse(
       isComplete = true;
       if (!res.writableEnded) {
         // Send final done chunk with finish_reason and usage data
-        const doneChunk = createDoneChunk(requestId, lastModel);
+        const doneChunk = createDoneChunk(
+          requestId,
+          dominantModelName(result) ?? lastModel
+        );
         if (result.usage) {
           doneChunk.usage = {
             prompt_tokens: result.usage.input_tokens || 0,

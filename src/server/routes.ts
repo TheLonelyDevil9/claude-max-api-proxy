@@ -393,6 +393,7 @@ export function handleModels(_req: Request, res: Response): void {
     "claude-sonnet-4-6",
     "claude-haiku-4",
     "claude-haiku-4-5",
+    "claude-fable-5",
   ];
   res.json({
     object: "list",

@@ -4,7 +4,7 @@
 
 import type { OpenAIChatRequest, OpenAIContentBlock } from "../types/openai.js";
 
-export type ClaudeModel = "opus" | "sonnet" | "haiku";
+export type ClaudeModel = "opus" | "sonnet" | "haiku" | "claude-fable-5";
 
 export interface CliInput {
   prompt: string;
@@ -22,10 +22,13 @@ const MODEL_MAP: Record<string, ClaudeModel> = {
   "claude-sonnet-4-6": "sonnet",
   "claude-haiku-4": "haiku",
   "claude-haiku-4-5": "haiku",
+  // Claude 5 family: passed to the CLI as the full model id
+  "claude-fable-5": "claude-fable-5",
   // Bare aliases
   "opus": "opus",
   "sonnet": "sonnet",
   "haiku": "haiku",
+  "fable": "claude-fable-5",
   "opus-max": "opus",
   "sonnet-max": "sonnet",
 };

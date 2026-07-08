@@ -271,7 +271,7 @@ export class ClaudeSubprocess extends EventEmitter {
       "--verbose", // Required for stream-json
       "--include-partial-messages", // Enable streaming chunks
       "--model",
-      options.model, // Model alias (opus/sonnet/haiku) or full model id
+      options.model, // Full model id (bare aliases are silently ignored by the CLI)
       "--no-session-persistence", // Don't save sessions
       "--append-system-prompt",
       OPENCLAW_TOOL_MAPPING_PROMPT,

@@ -113,7 +113,14 @@ export function dominantModelName(result: ClaudeCliResult): string | undefined {
   let best: string | undefined;
   let bestTokens = -1;
   for (const [model, usage] of Object.entries(result.modelUsage)) {
-    const tokens = (usage.inputTokens || 0) + (usage.outputTokens || 0);
+    // Count cached input too: the main model's fresh inputTokens can be tiny
+    // when its system prompt is a cache hit, while an auxiliary model's
+    // uncached input would otherwise outweigh it
+    const tokens =
+      (usage.inputTokens || 0) +
+      (usage.outputTokens || 0) +
+      (usage.cacheReadInputTokens || 0) +
+      (usage.cacheCreationInputTokens || 0);
     if (tokens > bestTokens) {
       best = model;
       bestTokens = tokens;

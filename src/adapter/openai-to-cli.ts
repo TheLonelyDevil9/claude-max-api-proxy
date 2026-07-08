@@ -4,7 +4,15 @@
 
 import type { OpenAIChatRequest, OpenAIContentBlock } from "../types/openai.js";
 
-export type ClaudeModel = "opus" | "sonnet" | "haiku" | "claude-fable-5";
+// Full model ids passed to the CLI's --model flag. Bare aliases (opus/sonnet/
+// haiku) are NOT used: on current CLI versions an unrecognized --model value
+// is silently ignored and the session runs on the default model instead.
+export type ClaudeModel =
+  | "claude-opus-4-6"
+  | "claude-sonnet-4-5"
+  | "claude-sonnet-4-6"
+  | "claude-haiku-4-5"
+  | "claude-fable-5";
 
 export interface CliInput {
   prompt: string;
@@ -15,22 +23,21 @@ export interface CliInput {
 const MODEL_MAP: Record<string, ClaudeModel> = {
   // Direct model names (provider prefixes like `claude-code-cli/` and `claude-max/`
   // are stripped by extractModel before consulting this map)
-  "claude-opus-4": "opus",
-  "claude-opus-4-6": "opus",
-  "claude-sonnet-4": "sonnet",
-  "claude-sonnet-4-5": "sonnet",
-  "claude-sonnet-4-6": "sonnet",
-  "claude-haiku-4": "haiku",
-  "claude-haiku-4-5": "haiku",
-  // Claude 5 family: passed to the CLI as the full model id
+  "claude-opus-4": "claude-opus-4-6",
+  "claude-opus-4-6": "claude-opus-4-6",
+  "claude-sonnet-4": "claude-sonnet-4-6",
+  "claude-sonnet-4-5": "claude-sonnet-4-5",
+  "claude-sonnet-4-6": "claude-sonnet-4-6",
+  "claude-haiku-4": "claude-haiku-4-5",
+  "claude-haiku-4-5": "claude-haiku-4-5",
   "claude-fable-5": "claude-fable-5",
   // Bare aliases
-  "opus": "opus",
-  "sonnet": "sonnet",
-  "haiku": "haiku",
+  "opus": "claude-opus-4-6",
+  "sonnet": "claude-sonnet-4-6",
+  "haiku": "claude-haiku-4-5",
   "fable": "claude-fable-5",
-  "opus-max": "opus",
-  "sonnet-max": "sonnet",
+  "opus-max": "claude-opus-4-6",
+  "sonnet-max": "claude-sonnet-4-6",
 };
 
 /**
@@ -49,7 +56,7 @@ export function extractModel(model: string): ClaudeModel {
   }
 
   // Default to opus (Claude Max subscription)
-  return "opus";
+  return "claude-opus-4-6";
 }
 
 /**

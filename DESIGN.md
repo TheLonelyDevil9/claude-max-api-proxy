@@ -87,12 +87,13 @@ import { startServer, stopServer } from "./server/index.js";
 
 const PROVIDER_ID = "claude-code-cli";
 const DEFAULT_PORT = 3456;
-const DEFAULT_MODEL = "claude-code-cli/claude-sonnet-4";
+const DEFAULT_MODEL = "claude-code-cli/claude-opus-4-6";
 
 const AVAILABLE_MODELS = [
-  { id: "claude-opus-4", name: "Claude Opus 4.5", alias: "opus" },
-  { id: "claude-sonnet-4", name: "Claude Sonnet 4", alias: "sonnet" },
-  { id: "claude-haiku-4", name: "Claude Haiku 4", alias: "haiku" },
+  { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
+  { id: "claude-opus-4-7", name: "Claude Opus 4.7" },
+  { id: "claude-opus-4-8", name: "Claude Opus 4.8" },
+  { id: "claude-fable-5", name: "Claude Fable 5" },
 ];
 
 const plugin = {
@@ -210,7 +211,7 @@ import { EventEmitter } from "events";
 import { ClaudeCliMessage, ClaudeCliResult } from "../types/claude-cli.js";
 
 interface SubprocessOptions {
-  model: "opus" | "sonnet" | "haiku";
+  model: "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-fable-5";
   sessionId?: string;
   cwd?: string;
 }
@@ -301,20 +302,19 @@ import { OpenAIChatRequest } from "../types/openai.js";
 
 interface CliInput {
   prompt: string;
-  model: "opus" | "sonnet" | "haiku";
+  model: "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-fable-5";
   sessionId?: string;
 }
 
 export function openaiToCli(request: OpenAIChatRequest): CliInput {
-  // Extract model alias from model name
-  const modelMap: Record<string, "opus" | "sonnet" | "haiku"> = {
-    "claude-opus-4": "opus",
-    "claude-sonnet-4": "sonnet",
-    "claude-haiku-4": "haiku",
-  };
-
   const modelId = request.model.replace("claude-code-cli/", "");
-  const model = modelMap[modelId] || "sonnet";
+  const model = AVAILABLE_MODELS
+    .map(({ id }) => id)
+    .find((id): id is CliInput["model"] => id === modelId);
+
+  if (!model) {
+    throw new Error(`Unsupported model: ${request.model}`);
+  }
 
   // Convert messages to single prompt
   // Claude Code CLI expects a single user message in non-interactive mode
@@ -381,7 +381,7 @@ export function cliResultToOpenai(
     id: `chatcmpl-${requestId}`,
     object: "chat.completion",
     created: Math.floor(Date.now() / 1000),
-    model: result.modelUsage ? Object.keys(result.modelUsage)[0] : "claude-sonnet-4",
+    model: result.modelUsage ? Object.keys(result.modelUsage)[0] : "claude-opus-4-6",
     choices: [{
       index: 0,
       message: {
@@ -426,9 +426,10 @@ export async function startServer(port: number): Promise<Server> {
     res.json({
       object: "list",
       data: [
-        { id: "claude-opus-4", object: "model", owned_by: "anthropic" },
-        { id: "claude-sonnet-4", object: "model", owned_by: "anthropic" },
-        { id: "claude-haiku-4", object: "model", owned_by: "anthropic" },
+        { id: "claude-opus-4-6", object: "model", owned_by: "anthropic" },
+        { id: "claude-opus-4-7", object: "model", owned_by: "anthropic" },
+        { id: "claude-opus-4-8", object: "model", owned_by: "anthropic" },
+        { id: "claude-fable-5", object: "model", owned_by: "anthropic" },
       ],
     });
   });

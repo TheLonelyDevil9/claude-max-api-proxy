@@ -7,7 +7,11 @@
 import type { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { ClaudeSubprocess } from "../subprocess/manager.js";
-import { openaiToCli } from "../adapter/openai-to-cli.js";
+import {
+  AVAILABLE_MODELS,
+  extractModel,
+  openaiToCli,
+} from "../adapter/openai-to-cli.js";
 import {
   cliResultToOpenai,
   createDoneChunk,
@@ -36,6 +40,17 @@ export async function handleChatCompletions(
           message: "messages is required and must be a non-empty array",
           type: "invalid_request_error",
           code: "invalid_messages",
+        },
+      });
+      return;
+    }
+
+    if (!body.model || !extractModel(body.model)) {
+      res.status(400).json({
+        error: {
+          message: `Unsupported model. Supported models: ${AVAILABLE_MODELS.join(", ")}`,
+          type: "invalid_request_error",
+          code: "invalid_model",
         },
       });
       return;
@@ -103,7 +118,7 @@ async function handleStreamingResponse(
 
   return new Promise<void>((resolve, reject) => {
     let isFirst = true;
-    let lastModel = "claude-sonnet-4";
+    let lastModel: string = cliInput.model;
     let isComplete = false;
     let hasEmittedText = false;
     let toolCallIndex = 0;
@@ -385,18 +400,9 @@ async function handleNonStreamingResponse(
  */
 export function handleModels(_req: Request, res: Response): void {
   const now = Math.floor(Date.now() / 1000);
-  const modelIds = [
-    "claude-opus-4",
-    "claude-opus-4-6",
-    "claude-sonnet-4",
-    "claude-sonnet-4-5",
-    "claude-sonnet-4-6",
-    "claude-haiku-4",
-    "claude-haiku-4-5",
-  ];
   res.json({
     object: "list",
-    data: modelIds.map((id) => ({
+    data: AVAILABLE_MODELS.map((id) => ({
       id,
       object: "model",
       owned_by: "anthropic",

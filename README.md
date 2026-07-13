@@ -38,7 +38,7 @@ Your App (OpenClaw, Continue.dev, etc.)
 
 - **OpenAI-compatible API** — Works with any client that supports OpenAI's API format
 - **Streaming support** — Real-time token streaming via Server-Sent Events
-- **Multiple models** — Claude Opus, Sonnet, and Haiku with flexible model aliases
+- **Multiple models** — Claude Opus 4.6, 4.7, 4.8, and Fable 5
 - **OpenClaw integration** — Automatic tool name mapping and system prompt adaptation
 - **Content block handling** — Proper text block separators for multi-block responses
 - **Session management** — Maintains conversation context via session IDs
@@ -106,7 +106,7 @@ curl http://localhost:3456/v1/models
 curl -X POST http://localhost:3456/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-sonnet-4",
+    "model": "claude-opus-4-6",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 
@@ -114,7 +114,7 @@ curl -X POST http://localhost:3456/v1/chat/completions \
 curl -N -X POST http://localhost:3456/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-sonnet-4",
+    "model": "claude-opus-4-6",
     "messages": [{"role": "user", "content": "Hello!"}],
     "stream": true
   }'
@@ -130,13 +130,14 @@ curl -N -X POST http://localhost:3456/v1/chat/completions \
 
 ## Available Models
 
-| Model ID | Alias | CLI Model |
-|----------|-------|-----------|
-| `claude-opus-4` | `opus` | Claude Opus |
-| `claude-sonnet-4` | `sonnet` | Claude Sonnet |
-| `claude-haiku-4` | `haiku` | Claude Haiku |
+| Model ID | CLI Model |
+|----------|-----------|
+| `claude-opus-4-6` | Claude Opus 4.6 |
+| `claude-opus-4-7` | Claude Opus 4.7 |
+| `claude-opus-4-8` | Claude Opus 4.8 |
+| `claude-fable-5` | Claude Fable 5 |
 
-All model IDs also accept a `claude-code-cli/` prefix (e.g., `claude-code-cli/claude-opus-4`). Unknown models default to Opus.
+All model IDs also accept a `claude-code-cli/` prefix (e.g., `claude-code-cli/claude-opus-4-6`). Requests for other models return an `invalid_model` error.
 
 ## Configuration with Popular Tools
 
@@ -153,7 +154,7 @@ Add to your Continue config:
   "models": [{
     "title": "Claude (Max)",
     "provider": "openai",
-    "model": "claude-sonnet-4",
+    "model": "claude-opus-4-6",
     "apiBase": "http://localhost:3456/v1",
     "apiKey": "not-needed"
   }]
@@ -171,7 +172,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="claude-sonnet-4",
+    model="claude-opus-4-6",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```

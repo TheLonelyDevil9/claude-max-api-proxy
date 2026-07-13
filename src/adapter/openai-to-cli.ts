@@ -4,7 +4,14 @@
 
 import type { OpenAIChatRequest, OpenAIContentBlock } from "../types/openai.js";
 
-export type ClaudeModel = "opus" | "sonnet" | "haiku";
+export const AVAILABLE_MODELS = [
+  "claude-opus-4-6",
+  "claude-opus-4-7",
+  "claude-opus-4-8",
+  "claude-fable-5",
+] as const;
+
+export type ClaudeModel = (typeof AVAILABLE_MODELS)[number];
 
 export interface CliInput {
   prompt: string;
@@ -12,41 +19,14 @@ export interface CliInput {
   sessionId?: string;
 }
 
-const MODEL_MAP: Record<string, ClaudeModel> = {
-  // Direct model names (provider prefixes like `claude-code-cli/` and `claude-max/`
-  // are stripped by extractModel before consulting this map)
-  "claude-opus-4": "opus",
-  "claude-opus-4-6": "opus",
-  "claude-sonnet-4": "sonnet",
-  "claude-sonnet-4-5": "sonnet",
-  "claude-sonnet-4-6": "sonnet",
-  "claude-haiku-4": "haiku",
-  "claude-haiku-4-5": "haiku",
-  // Bare aliases
-  "opus": "opus",
-  "sonnet": "sonnet",
-  "haiku": "haiku",
-  "opus-max": "opus",
-  "sonnet-max": "sonnet",
-};
+const AVAILABLE_MODEL_SET = new Set<string>(AVAILABLE_MODELS);
 
 /**
- * Extract Claude model alias from request model string
+ * Extract a supported Claude model from a request model string
  */
-export function extractModel(model: string): ClaudeModel {
-  // Try direct lookup
-  if (MODEL_MAP[model]) {
-    return MODEL_MAP[model];
-  }
-
-  // Try stripping provider prefix
+export function extractModel(model: string): ClaudeModel | null {
   const stripped = model.replace(/^(?:claude-code-cli|claude-max)\//, "");
-  if (MODEL_MAP[stripped]) {
-    return MODEL_MAP[stripped];
-  }
-
-  // Default to opus (Claude Max subscription)
-  return "opus";
+  return AVAILABLE_MODEL_SET.has(stripped) ? stripped as ClaudeModel : null;
 }
 
 /**
@@ -136,9 +116,14 @@ export function messagesToPrompt(
  * Convert OpenAI chat request to CLI input format
  */
 export function openaiToCli(request: OpenAIChatRequest): CliInput {
+  const model = extractModel(request.model);
+  if (!model) {
+    throw new Error(`Unsupported model: ${request.model}`);
+  }
+
   return {
     prompt: messagesToPrompt(request.messages),
-    model: extractModel(request.model),
+    model,
     sessionId: request.user, // Use OpenAI's user field for session mapping
   };
 }

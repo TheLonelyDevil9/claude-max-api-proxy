@@ -3,7 +3,7 @@
  *
  * Starts the real server, sends HTTP requests, and verifies responses
  * against the OpenAI API format. Requires Claude CLI to be installed
- * and authenticated — uses haiku for speed and cost.
+ * and authenticated — uses the first supported Opus model.
  *
  * Run: npm test
  */
@@ -47,7 +47,7 @@ describe("health and models", () => {
     assert.ok(body.timestamp);
   });
 
-  it("GET /v1/models lists all model IDs", async () => {
+  it("GET /v1/models lists only the supported model IDs", async () => {
     const res = await fetch(`${baseUrl}/v1/models`);
     assert.equal(res.status, 200);
     const body = await res.json() as any;
@@ -55,17 +55,12 @@ describe("health and models", () => {
     assert.ok(Array.isArray(body.data));
 
     const ids = body.data.map((m: any) => m.id);
-    for (const expected of [
-      "claude-opus-4",
+    assert.deepEqual(ids, [
       "claude-opus-4-6",
-      "claude-sonnet-4",
-      "claude-sonnet-4-5",
-      "claude-sonnet-4-6",
-      "claude-haiku-4",
-      "claude-haiku-4-5",
-    ]) {
-      assert.ok(ids.includes(expected), `missing model ${expected}`);
-    }
+      "claude-opus-4-7",
+      "claude-opus-4-8",
+      "claude-fable-5",
+    ]);
 
     for (const model of body.data) {
       assert.equal(model.object, "model");
@@ -83,12 +78,38 @@ describe("health and models", () => {
     const res = await fetch(`${baseUrl}/v1/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "haiku", messages: [] }),
+      body: JSON.stringify({ model: "claude-opus-4-6", messages: [] }),
     });
     assert.equal(res.status, 400);
     const body = await res.json() as any;
     assert.ok(body.error);
     assert.equal(body.error.code, "invalid_messages");
+  });
+
+  it("returns 400 for an unsupported model without invoking Claude", async () => {
+    const previousClaudeBin = process.env.CLAUDE_BIN;
+    process.env.CLAUDE_BIN = "missing-claude-for-invalid-model-test";
+
+    try {
+      const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-haiku-4",
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      });
+
+      assert.equal(res.status, 400);
+      const body = await res.json() as any;
+      assert.equal(body.error.code, "invalid_model");
+    } finally {
+      if (previousClaudeBin === undefined) {
+        delete process.env.CLAUDE_BIN;
+      } else {
+        process.env.CLAUDE_BIN = previousClaudeBin;
+      }
+    }
   });
 });
 
@@ -100,7 +121,7 @@ describe("non-streaming completion", { timeout: TEST_TIMEOUT }, () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-haiku-4",
+        model: "claude-opus-4-6",
         stream: false,
         messages: [
           {
@@ -144,7 +165,7 @@ describe("non-streaming completion", { timeout: TEST_TIMEOUT }, () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "haiku",
+        model: "claude-opus-4-6",
         stream: false,
         messages: [
           {
@@ -169,7 +190,7 @@ describe("streaming completion", { timeout: TEST_TIMEOUT }, () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-haiku-4",
+        model: "claude-opus-4-6",
         stream: true,
         messages: [
           {

@@ -19,9 +19,10 @@ const DEFAULT_PORT = 3456;
 const DEFAULT_MODEL = `${PROVIDER_ID}/${AVAILABLE_MODEL_IDS[0]}`;
 
 const MODEL_METADATA: Record<ClaudeModel, { name: string; reasoning: boolean }> = {
-  "claude-opus-4-6": { name: "Claude Opus 4.6", reasoning: true },
-  "claude-opus-4-7": { name: "Claude Opus 4.7", reasoning: true },
+  "claude-opus-5": { name: "Claude Opus 5", reasoning: true },
   "claude-opus-4-8": { name: "Claude Opus 4.8", reasoning: true },
+  "claude-opus-4-7": { name: "Claude Opus 4.7", reasoning: true },
+  "claude-opus-4-6": { name: "Claude Opus 4.6", reasoning: true },
   "claude-fable-5": { name: "Claude Fable 5", reasoning: true },
 };
 

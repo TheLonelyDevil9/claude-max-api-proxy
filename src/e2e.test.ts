@@ -56,9 +56,10 @@ describe("health and models", () => {
 
     const ids = body.data.map((m: any) => m.id);
     assert.deepEqual(ids, [
-      "claude-opus-4-6",
-      "claude-opus-4-7",
+      "claude-opus-5",
       "claude-opus-4-8",
+      "claude-opus-4-7",
+      "claude-opus-4-6",
       "claude-fable-5",
     ]);
 

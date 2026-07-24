@@ -106,7 +106,7 @@ curl http://localhost:3456/v1/models
 curl -X POST http://localhost:3456/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-opus-4-6",
+    "model": "claude-opus-5",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 
@@ -114,7 +114,7 @@ curl -X POST http://localhost:3456/v1/chat/completions \
 curl -N -X POST http://localhost:3456/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-opus-4-6",
+    "model": "claude-opus-5",
     "messages": [{"role": "user", "content": "Hello!"}],
     "stream": true
   }'
@@ -132,12 +132,15 @@ curl -N -X POST http://localhost:3456/v1/chat/completions \
 
 | Model ID | CLI Model |
 |----------|-----------|
-| `claude-opus-4-6` | Claude Opus 4.6 |
-| `claude-opus-4-7` | Claude Opus 4.7 |
+| `claude-opus-5` | Claude Opus 5 *(default)* |
 | `claude-opus-4-8` | Claude Opus 4.8 |
+| `claude-opus-4-7` | Claude Opus 4.7 |
+| `claude-opus-4-6` | Claude Opus 4.6 |
 | `claude-fable-5` | Claude Fable 5 |
 
-All model IDs also accept a `claude-code-cli/` prefix (e.g., `claude-code-cli/claude-opus-4-6`). Requests for other models return an `invalid_model` error.
+All model IDs also accept a `claude-code-cli/` prefix (e.g., `claude-code-cli/claude-opus-5`). Requests for other models return an `invalid_model` error.
+
+`claude-opus-5` is the default model advertised to clients, and is the model reported in a response when the CLI does not identify one. Requests must still name a model explicitly — omitting `model` returns an `invalid_model` error rather than falling back.
 
 ## Configuration with Popular Tools
 
@@ -154,7 +157,7 @@ Add to your Continue config:
   "models": [{
     "title": "Claude (Max)",
     "provider": "openai",
-    "model": "claude-opus-4-6",
+    "model": "claude-opus-5",
     "apiBase": "http://localhost:3456/v1",
     "apiKey": "not-needed"
   }]
@@ -172,7 +175,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="claude-opus-4-6",
+    model="claude-opus-5",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```

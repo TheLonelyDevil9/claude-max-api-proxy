@@ -4,10 +4,13 @@
 
 import type { OpenAIChatRequest, OpenAIContentBlock } from "../types/openai.js";
 
+// Order is significant: the first entry is the provider default (DEFAULT_MODEL)
+// and the fallback used when the CLI reports no model.
 export const AVAILABLE_MODELS = [
-  "claude-opus-4-6",
-  "claude-opus-4-7",
+  "claude-opus-5",
   "claude-opus-4-8",
+  "claude-opus-4-7",
+  "claude-opus-4-6",
   "claude-fable-5",
 ] as const;
 

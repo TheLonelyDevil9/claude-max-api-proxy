@@ -87,12 +87,13 @@ import { startServer, stopServer } from "./server/index.js";
 
 const PROVIDER_ID = "claude-code-cli";
 const DEFAULT_PORT = 3456;
-const DEFAULT_MODEL = "claude-code-cli/claude-opus-4-6";
+const DEFAULT_MODEL = "claude-code-cli/claude-opus-5";
 
 const AVAILABLE_MODELS = [
-  { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
-  { id: "claude-opus-4-7", name: "Claude Opus 4.7" },
+  { id: "claude-opus-5", name: "Claude Opus 5" },
   { id: "claude-opus-4-8", name: "Claude Opus 4.8" },
+  { id: "claude-opus-4-7", name: "Claude Opus 4.7" },
+  { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
   { id: "claude-fable-5", name: "Claude Fable 5" },
 ];
 
@@ -211,7 +212,7 @@ import { EventEmitter } from "events";
 import { ClaudeCliMessage, ClaudeCliResult } from "../types/claude-cli.js";
 
 interface SubprocessOptions {
-  model: "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-fable-5";
+  model: "claude-opus-5" | "claude-opus-4-8" | "claude-opus-4-7" | "claude-opus-4-6" | "claude-fable-5";
   sessionId?: string;
   cwd?: string;
 }
@@ -302,7 +303,7 @@ import { OpenAIChatRequest } from "../types/openai.js";
 
 interface CliInput {
   prompt: string;
-  model: "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-fable-5";
+  model: "claude-opus-5" | "claude-opus-4-8" | "claude-opus-4-7" | "claude-opus-4-6" | "claude-fable-5";
   sessionId?: string;
 }
 
@@ -381,7 +382,7 @@ export function cliResultToOpenai(
     id: `chatcmpl-${requestId}`,
     object: "chat.completion",
     created: Math.floor(Date.now() / 1000),
-    model: result.modelUsage ? Object.keys(result.modelUsage)[0] : "claude-opus-4-6",
+    model: result.modelUsage ? Object.keys(result.modelUsage)[0] : "claude-opus-5",
     choices: [{
       index: 0,
       message: {
@@ -426,9 +427,10 @@ export async function startServer(port: number): Promise<Server> {
     res.json({
       object: "list",
       data: [
-        { id: "claude-opus-4-6", object: "model", owned_by: "anthropic" },
-        { id: "claude-opus-4-7", object: "model", owned_by: "anthropic" },
+        { id: "claude-opus-5", object: "model", owned_by: "anthropic" },
         { id: "claude-opus-4-8", object: "model", owned_by: "anthropic" },
+        { id: "claude-opus-4-7", object: "model", owned_by: "anthropic" },
+        { id: "claude-opus-4-6", object: "model", owned_by: "anthropic" },
         { id: "claude-fable-5", object: "model", owned_by: "anthropic" },
       ],
     });

@@ -5,9 +5,10 @@
  * Uses spawn() instead of exec() to prevent shell injection vulnerabilities.
  */
 
-import { spawn, ChildProcess } from "child_process";
+import { spawn, spawnSync, ChildProcess } from "child_process";
 import { EventEmitter } from "events";
 import fs from "fs/promises";
+import { existsSync } from "fs";
 import path from "path";
 import type {
   ClaudeCliMessage,
@@ -43,6 +44,77 @@ export interface SubprocessEvents {
 }
 
 const DEFAULT_TIMEOUT = 900000; // 15 minutes
+
+/**
+ * Resolve the Claude CLI binary. On Windows, `claude` on PATH is an npm .cmd
+ * shim, which spawn() cannot execute without a shell (rejected since the
+ * Node 18 CVE-2024-27980 fix). The shim only forwards to a native claude.exe,
+ * so locate and use that exe directly.
+ *
+ * The CLAUDE_BIN env var is consulted on every call so it can be changed at
+ * runtime; the Windows exe lookup is deferred to first use (no filesystem I/O
+ * at import) and cached afterwards.
+ */
+let cachedClaudeBin: string | undefined;
+
+function getClaudeBin(): string {
+  if (process.env.CLAUDE_BIN) return process.env.CLAUDE_BIN;
+  cachedClaudeBin ??= resolveWindowsClaudeExe() ?? "claude";
+  return cachedClaudeBin;
+}
+
+function resolveWindowsClaudeExe(): string | undefined {
+  if (process.platform !== "win32") return undefined;
+
+  const candidates: string[] = [];
+
+  // Locate claude on PATH via where.exe (spawned directly with fixed args, no
+  // shell). This handles custom npm prefixes and nvm-windows installs.
+  const where = spawnSync("where.exe", ["claude"], { encoding: "utf8" });
+  if (where.status === 0 && where.stdout) {
+    for (const entry of where.stdout.split(/\r?\n/)) {
+      const found = entry.trim();
+      if (!found) continue;
+      if (found.toLowerCase().endsWith(".exe")) {
+        candidates.push(found);
+      } else {
+        // npm shim (.cmd/.ps1/extensionless) forwards to the package's exe
+        candidates.push(
+          path.join(
+            path.dirname(found),
+            "node_modules",
+            "@anthropic-ai",
+            "claude-code",
+            "bin",
+            "claude.exe"
+          )
+        );
+      }
+    }
+  }
+
+  // Known install locations, in case claude is not on PATH at all
+  if (process.env.APPDATA) {
+    candidates.push(
+      path.join(
+        process.env.APPDATA,
+        "npm",
+        "node_modules",
+        "@anthropic-ai",
+        "claude-code",
+        "bin",
+        "claude.exe"
+      )
+    );
+  }
+  if (process.env.USERPROFILE) {
+    candidates.push(
+      path.join(process.env.USERPROFILE, ".local", "bin", "claude.exe")
+    );
+  }
+
+  return candidates.find((candidate) => existsSync(candidate));
+}
 
 /**
  * System prompt appended to Claude CLI to map OpenClaw tool names to Claude Code equivalents.
@@ -104,7 +176,7 @@ export class ClaudeSubprocess extends EventEmitter {
     return new Promise((resolve, reject) => {
       try {
         // Use spawn() for security - no shell interpretation
-        this.process = spawn(process.env.CLAUDE_BIN || "claude", args, {
+        this.process = spawn(getClaudeBin(), args, {
           cwd: options.cwd || process.cwd(),
           env: Object.fromEntries(
             Object.entries(process.env).filter(([k]) => k !== "CLAUDECODE")
@@ -199,7 +271,7 @@ export class ClaudeSubprocess extends EventEmitter {
       "--verbose", // Required for stream-json
       "--include-partial-messages", // Enable streaming chunks
       "--model",
-      options.model, // Exact supported model ID
+      options.model, // Full model id (bare aliases are silently ignored by the CLI)
       "--no-session-persistence", // Don't save sessions
       "--append-system-prompt",
       OPENCLAW_TOOL_MAPPING_PROMPT,
@@ -294,7 +366,7 @@ export class ClaudeSubprocess extends EventEmitter {
  */
 export async function verifyClaude(): Promise<{ ok: boolean; error?: string; version?: string }> {
   return new Promise((resolve) => {
-    const proc = spawn(process.env.CLAUDE_BIN || "claude", ["--version"], { stdio: "pipe" });
+    const proc = spawn(getClaudeBin(), ["--version"], { stdio: "pipe" });
     let output = "";
 
     proc.stdout?.on("data", (chunk: Buffer) => {

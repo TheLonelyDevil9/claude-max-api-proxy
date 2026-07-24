@@ -71,10 +71,7 @@ export function cliResultToOpenai(
   requestId: string,
   toolCalls?: OpenAIToolCall[]
 ): OpenAIChatResponse {
-  // Get model from modelUsage or default
-  const modelName = result.modelUsage
-    ? Object.keys(result.modelUsage)[0]
-    : AVAILABLE_MODELS[0];
+  const modelName = dominantModelName(result) ?? AVAILABLE_MODELS[0];
 
   const message: OpenAIChatResponse["choices"][0]["message"] = {
     role: "assistant",
@@ -104,6 +101,33 @@ export function cliResultToOpenai(
         (result.usage?.input_tokens || 0) + (result.usage?.output_tokens || 0),
     },
   };
+}
+
+/**
+ * Pick the model that produced the response. The CLI can run small auxiliary
+ * calls on a different model in the same session, and object key order does
+ * not reflect which model was the main one, so choose the modelUsage entry
+ * with the highest total token count.
+ */
+export function dominantModelName(result: ClaudeCliResult): string | undefined {
+  if (!result.modelUsage) return undefined;
+  let best: string | undefined;
+  let bestTokens = -1;
+  for (const [model, usage] of Object.entries(result.modelUsage)) {
+    // Count cached input too: the main model's fresh inputTokens can be tiny
+    // when its system prompt is a cache hit, while an auxiliary model's
+    // uncached input would otherwise outweigh it
+    const tokens =
+      (usage.inputTokens || 0) +
+      (usage.outputTokens || 0) +
+      (usage.cacheReadInputTokens || 0) +
+      (usage.cacheCreationInputTokens || 0);
+    if (tokens > bestTokens) {
+      best = model;
+      bestTokens = tokens;
+    }
+  }
+  return best;
 }
 
 /**

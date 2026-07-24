@@ -89,6 +89,8 @@ export interface ClaudeCliResult {
   modelUsage: Record<string, {
     inputTokens: number;
     outputTokens: number;
+    cacheReadInputTokens?: number;
+    cacheCreationInputTokens?: number;
     costUSD: number;
   }>;
 }
